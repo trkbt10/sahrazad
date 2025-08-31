@@ -1,4 +1,4 @@
 /**
- * @file Main entry point for the TypeScript library.
+ * @file Main entry point: re-export Knowledge Graph APIs.
  */
-console.log("HELLO!");
+export type { Embedding, EmbedMany } from "./services/embedding";

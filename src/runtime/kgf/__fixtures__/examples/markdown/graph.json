@@ -1,0 +1,53 @@
+{
+  "modules": {
+    "README.md": {
+      "file": "README.md"
+    },
+    "url:docs": {
+      "file": null
+    },
+    "url:https://example.com": {
+      "file": null
+    },
+    "url:./assets/logo.png": {
+      "file": null
+    },
+    "docs/faq.md": {
+      "file": "docs/faq.md"
+    },
+    "docs/guide.md": {
+      "file": "docs/guide.md"
+    }
+  },
+  "symbols": {},
+  "edges": [
+    {
+      "kind": "moduleDependsOn",
+      "from": "README.md",
+      "to": "url:docs",
+      "via": "docs/guide.md",
+      "dep_kind": "value"
+    },
+    {
+      "kind": "moduleDependsOn",
+      "from": "README.md",
+      "to": "url:https://example.com",
+      "via": "https://example.com",
+      "dep_kind": "value"
+    },
+    {
+      "kind": "moduleDependsOn",
+      "from": "README.md",
+      "to": "url:./assets/logo.png",
+      "via": "./assets/logo.png",
+      "dep_kind": "value"
+    },
+    {
+      "kind": "moduleDependsOn",
+      "from": "README.md",
+      "to": "url:docs",
+      "via": "docs/faq#top",
+      "dep_kind": "value"
+    }
+  ]
+}

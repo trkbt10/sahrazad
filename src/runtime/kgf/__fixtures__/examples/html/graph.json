@@ -1,0 +1,25 @@
+{
+  "modules": {
+    "docs/index.html": {
+      "file": "docs/index.html"
+    },
+    "index.html": {
+      "file": "index.html"
+    }
+  },
+  "symbols": {},
+  "edges": [
+    {
+      "kind": "parseError",
+      "from": "docs/index.html",
+      "to": "docs/index.html",
+      "message": "'SCRIPTSRC_S'"
+    },
+    {
+      "kind": "parseError",
+      "from": "index.html",
+      "to": "index.html",
+      "message": "'SCRIPTSRC_S'"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+
+kgf 0.5
+language: reltext
+
+=== lex
+SKIP        /(\s+)+/
+TOKEN ARROW     /->/
+TOKEN COLON     /:/
+TOKEN Ident     /[^\s:]+/
+
+=== grammar
+Doc        -> ( Line )*
+Line       -> from:Ident ARROW to:Ident [ COLON kind:Ident ]
+
+=== attrs
+on Line:    import module=to ; import module=from
+
+=== resolver
+sources:
+relative_prefixes: ./, ../, /, http://, https://, url:, npm:, pip:
+exts:
+indexes:
+bare_prefix:
+module_path_style: slash

@@ -1,0 +1,3 @@
+docs/guide.md -> docs/faq.md
+https://example.com -> docs/guide.md : cites
+A -> B : depends

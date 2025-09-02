@@ -1,0 +1,30 @@
+{
+  "modules": {
+    "graph.rel": {
+      "file": "graph.rel"
+    },
+    "docs/faq.md": {
+      "file": "docs/faq.md"
+    },
+    "docs/guide.md": {
+      "file": "docs/guide.md"
+    }
+  },
+  "symbols": {},
+  "edges": [
+    {
+      "kind": "moduleDependsOn",
+      "from": "graph.rel",
+      "to": "docs/faq.md",
+      "via": "docs/faq.md",
+      "dep_kind": "value"
+    },
+    {
+      "kind": "moduleDependsOn",
+      "from": "graph.rel",
+      "to": "docs/guide.md",
+      "via": "docs/guide.md",
+      "dep_kind": "value"
+    }
+  ]
+}

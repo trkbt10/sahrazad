@@ -1,0 +1,29 @@
+{
+  "modules": {
+    "src/app.js": {
+      "file": "src/app.js"
+    },
+    "npm:'": {
+      "file": null
+    },
+    "src/util.js": {
+      "file": "src/util.js"
+    }
+  },
+  "symbols": {},
+  "edges": [
+    {
+      "kind": "moduleDependsOn",
+      "from": "src/app.js",
+      "to": "npm:'",
+      "via": "'./util.js'",
+      "dep_kind": "value"
+    },
+    {
+      "kind": "parseError",
+      "from": "src/app.js",
+      "to": "src/app.js",
+      "message": "'ExecCtx' object has no attribute 'next_arg_index'"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+
+kgf 0.5
+language: html
+
+=== lex
+SKIP        /(\s+|<!--[\s\S]*?-->)+/
+TOKEN AHREF      /<a[^>]*\bhref\s*=\s*"(.*?)"[^>]*>/
+TOKEN AHREF_S    /<a[^>]*\bhref\s*=\s*'(.*?)'[^>]*>/
+TOKEN IMGSRC     /<img[^>]*\bsrc\s*=\s*"(.*?)"[^>]*>/
+TOKEN IMGSRC_S   /<img[^>]*\bsrc\s*=\s*'(.*?)'[^>]*>/
+TOKEN SCRIPTSRC  /<script[^>]*\bsrc\s*=\s*"(.*?)"[^>]*>/
+TOKEN SCRIPTSRC_S/<script[^>]*\bsrc\s*=\s*'(.*?)'[^>]*>/
+TOKEN LINKHREF   /<link[^>]*\bhref\s*=\s*"(.*?)"[^>]*>/
+TOKEN LINKHREF_S /<link[^>]*\bhref\s*=\s*'(.*?)'[^>]*>/
+
+=== grammar
+Doc        -> ( ATag | ImgTag | ScriptTag | LinkTag )*
+ATag       -> (AHREF | AHREF_S)
+ImgTag     -> (IMGSRC | IMGSRC_S)
+ScriptTag  -> (SCRIPTSRC | SCRIPTSRC_S)
+LinkTag    -> (LINKHREF | LINKHREF_S)
+
+=== attrs
+on ATag:      import module=_last
+on ImgTag:    import module=_last
+on ScriptTag: import module=_last
+on LinkTag:   import module=_last
+
+=== resolver
+sources: .html, .htm
+relative_prefixes: ./, ../, /, http://, https://, mailto:, ftp://, data:
+exts: .html, .htm, .png, .jpg, .jpeg, .gif, .svg, .js, .css
+indexes: /index.html
+bare_prefix: url:
+module_path_style: slash

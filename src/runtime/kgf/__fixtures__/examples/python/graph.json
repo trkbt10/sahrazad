@@ -1,0 +1,29 @@
+{
+  "modules": {
+    "main.py": {
+      "file": "main.py"
+    },
+    "pkg/__init__.py": {
+      "file": "pkg/__init__.py"
+    },
+    "pkg/util.py": {
+      "file": "pkg/util.py"
+    }
+  },
+  "symbols": {},
+  "edges": [
+    {
+      "kind": "moduleDependsOn",
+      "from": "main.py",
+      "to": "pkg/__init__.py",
+      "via": "pkg",
+      "dep_kind": "value"
+    },
+    {
+      "kind": "parseError",
+      "from": "main.py",
+      "to": "main.py",
+      "message": "'ExecCtx' object has no attribute 'next_arg_index'"
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "modules": {
+    "src/main.ts": {
+      "file": "src/main.ts"
+    },
+    "npm:'": {
+      "file": null
+    },
+    "npm:'react'": {
+      "file": null
+    },
+    "src/types.ts": {
+      "file": "src/types.ts"
+    },
+    "src/utils.ts": {
+      "file": "src/utils.ts"
+    }
+  },
+  "symbols": {},
+  "edges": [
+    {
+      "kind": "moduleDependsOn",
+      "from": "src/main.ts",
+      "to": "npm:'",
+      "via": "'./utils'",
+      "dep_kind": "value"
+    },
+    {
+      "kind": "moduleDependsOn",
+      "from": "src/main.ts",
+      "to": "npm:'react'",
+      "via": "'react'",
+      "dep_kind": "value"
+    },
+    {
+      "kind": "parseError",
+      "from": "src/main.ts",
+      "to": "src/main.ts",
+      "message": "'ExecCtx' object has no attribute 'next_arg_index'"
+    }
+  ]
+}

@@ -14,8 +14,8 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test:cov": "vitest run --coverage",
-    "test": "vitest --run --pool=forks"
+    "test:cov": "bun run vitest run --coverage",
+    "test": "bun run vitest"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
@@ -36,6 +36,9 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
-    "openai": "^5.16.0"
+    "env-paths": "^3.0.0",
+    "openai": "^5.16.0",
+    "simple-git": "^3.28.0",
+    "vcdb": "^0.0.2"
   }
 }

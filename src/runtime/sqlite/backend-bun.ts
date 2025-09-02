@@ -36,7 +36,10 @@ export function createBunSqlite(filename: string, readOnly: boolean | undefined)
       throw new Error("sql is required");
     }
     // Prefer query(...).get(...) to avoid preparing twice; both are ok in Bun.
-    const q = db.query<T>(sql);
+    // Note: Bun's `Database.query` generic availability varies across type defs.
+    // We intentionally avoid generic arguments here and cast the result to T,
+    // because this wrapper's job is to normalize shapes across drivers.
+    const q = db.query(sql);
     const bind: unknown[] | Record<string, unknown> | undefined = params;
     return q.get(bind) as T | undefined;
   };
@@ -45,7 +48,8 @@ export function createBunSqlite(filename: string, readOnly: boolean | undefined)
     if (sql === undefined || sql === null || sql === "") {
       throw new Error("sql is required");
     }
-    const q = db.query<T>(sql);
+    // See note above: avoid generics on `query` to absorb driver typedef differences.
+    const q = db.query(sql);
     const bind: unknown[] | Record<string, unknown> | undefined = params;
     return q.all(bind) as T[];
   };
@@ -97,14 +101,16 @@ export function createBunSqliteWithCtor(
       throw new Error("sql is required");
     }
     const bind: unknown[] | Record<string, unknown> | undefined = params;
-    return db.query<T>(sql).get(bind) as T | undefined;
+    // Avoid generics on `query`; cast the result to T to normalize across drivers.
+    return db.query(sql).get(bind) as T | undefined;
   };
   const all = <T,>(sql: string, params?: SqlParams): T[] => {
     if (sql === undefined || sql === null || sql === "") {
       throw new Error("sql is required");
     }
     const bind: unknown[] | Record<string, unknown> | undefined = params;
-    return db.query<T>(sql).all(bind) as T[];
+    // Avoid generics on `query`; cast result array to T[] (typing shim layer).
+    return db.query(sql).all(bind) as T[];
   };
   const close = (): void => {
     db.close();

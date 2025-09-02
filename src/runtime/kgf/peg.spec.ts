@@ -25,7 +25,7 @@ indexes: /index.ts
     const spec = parseKGF(text);
     const peg = buildPEG(spec);
     const lex = buildLexer(spec.tokens);
-    const toks = lex("foo bar");
+    const toks = lex("foo foo");
     const graph = createGraph();
     const ctx = { spec, graph, file: "main.ts", root: "/proj", scopes: [{ value: {}, type: {} }], symSeq: 0, callSeq: 0, callStack: [], eventsTmp: [] };
     const [labels, events] = runParse(peg, spec, "Start", toks, ctx);

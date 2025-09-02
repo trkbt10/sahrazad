@@ -3,6 +3,7 @@
  */
 import type { AttrAction, KGFSpec, ResolverAlias, ResolverSpec, RuleDef, TokenDef } from "./types";
 
+/** Extract section body by heading marker `=== name`. */
 function section(text: string, name: string): string {
   const marker = `=== ${name}`;
   const idx = text.indexOf(marker);
@@ -14,6 +15,7 @@ function section(text: string, name: string): string {
   return split.length > 0 ? split[0] : body;
 }
 
+/** Split a comma/whitespace list into string array. */
 function parseList(s: string | undefined): string[] {
   if (!s) {
     return [];
@@ -196,7 +198,7 @@ export function parseAttrs(attrsText: string): Record<string, AttrAction[]> {
 export function parseKGF(text: string): KGFSpec {
   const lines = text.split(/\r?\n/);
   const langLine = lines.find((lnRaw) => lnRaw.trim().startsWith("language:"));
-  const language = langLine ? langLine.split(":", 1)[1]!.trim() : "generic";
+  const language = langLine ? langLine.slice(langLine.indexOf(":") + 1).trim() : "generic";
   const toks = parseLex(section(text, "lex"));
   const rules = parseRules(section(text, "grammar"));
   const attrs = parseAttrs(section(text, "attrs"));

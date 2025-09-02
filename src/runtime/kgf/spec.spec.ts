@@ -39,4 +39,9 @@ rust_mod_mode: false
     const res = parseResolver("sources: .js .ts\n");
     expect(res.sources).toContain(".ts");
   });
+
+  it("supports import_bind action schema in attrs", () => {
+    const attrs = parseAttrs("on Start: import_bind module=mod import=orig local=alias ns=value");
+    expect(attrs.Start?.[0]?.kind).toBe("import_bind");
+  });
 });

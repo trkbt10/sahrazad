@@ -373,6 +373,28 @@ function applyAction(a: AttrAction, ctx: ExecCtx, lab: Record<string, unknown>):
     ctx.eventsTmp.push(["Import", { module: to }]);
     return;
   }
+  if (kind === "import_bind") {
+    // Bind a locally imported alias to a symbol in the resolved external module
+    const modVal = lab[P["module"] as string];
+    const importVal = lab[P["import"] as string];
+    const localVal = lab[P["local"] as string];
+    const ns = P["ns"] ?? "value";
+    if (typeof modVal !== "string" || typeof importVal !== "string" || typeof localVal !== "string") {
+      return;
+    }
+    const to = resolveModule(ctx.spec.resolver, ctx.spec.language, ctx.file, modVal, ctx.root);
+    if (!ctx.graph.modules[to]) {
+      ctx.graph.modules[to] = { id: to, file: to.includes(":") ? null : to };
+    }
+    const targetSym = `${to}::${ns}:${importVal}`;
+    const top = ctx.scopes[ctx.scopes.length - 1]!;
+    if (ns === "value" || ns === "type") {
+      top[ns][localVal] = targetSym;
+    }
+    addEdge(ctx.graph, "importsSymbol", ctx.file, targetSym, { local: localVal, imported: importVal, module: to });
+    ctx.eventsTmp.push(["ImportBind", { local: localVal, imported: importVal, module: to }]);
+    return;
+  }
   if (kind === "reexport") {
     const modVal = lab[P["module"] as string];
     if (typeof modVal !== "string" || modVal.length === 0) { return; }
@@ -434,9 +456,16 @@ export function runParse(
   };
 
   const root = peg.ast[startRule];
+  const before = ctx.eventsTmp.length;
   const r = evalNode(peg, root, toks, 0, memo, callRule, ctx);
   if (!r[0]) {
     throw new Error("parse failed at token index 0");
   }
-  return [r[2], r[3]];
+  // Apply actions for start rule as well
+  const startActs = peg.attrs[startRule] ?? [];
+  for (const a of startActs) {
+    applyAction(a, ctx, r[2]);
+  }
+  const events = ctx.eventsTmp.slice(before);
+  return [r[2], events];
 }

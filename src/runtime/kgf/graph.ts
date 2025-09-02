@@ -47,7 +47,13 @@ export function getOrAddSymbol(
 }
 
 /** Add a directed edge with optional attributes. */
-export function addEdge(graph: CodeGraph, kind: string, from: string, to: string, attrs?: Record<string, unknown>): void {
+export function addEdge(
+  graph: CodeGraph,
+  kind: string,
+  from: string,
+  to: string,
+  attrs?: Record<string, unknown>,
+): void {
   const edge: Edge = { kind, from, to, attrs: attrs ? { ...attrs } : undefined };
   graph.edges.push(edge);
 }
@@ -55,9 +61,7 @@ export function addEdge(graph: CodeGraph, kind: string, from: string, to: string
 /** Convert internal graph to a serializable JSON structure. */
 export function toJSON(graph: CodeGraph): CodeGraphJson {
   return {
-    modules: Object.fromEntries(
-      Object.entries(graph.modules).map(([k, v]) => [k, { file: v.file }]),
-    ),
+    modules: Object.fromEntries(Object.entries(graph.modules).map(([k, v]) => [k, { file: v.file }])),
     symbols: Object.fromEntries(
       Object.entries(graph.symbols).map(([k, s]) => [k, { name: s.name, kind: s.kind, ns: s.ns, module: s.module }]),
     ),

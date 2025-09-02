@@ -4,9 +4,10 @@
  * normalized relative paths or a bare-prefixed logical id when resolution fails.
  */
 import { existsSync, statSync } from "node:fs";
-import { join, dirname, normalize, relative } from "node:path";
+import { join, dirname, normalize, relative, isAbsolute } from "node:path";
 import type { ResolverAlias, ResolverSpec } from "./types";
 
+/** Apply regexp-based alias rewrites in order to a module specifier. */
 function applyAliases(input: string, aliases: ResolverAlias[]): string {
   return aliases.reduce<string>((acc, a) => {
     try {
@@ -18,6 +19,7 @@ function applyAliases(input: string, aliases: ResolverAlias[]): string {
   }, input);
 }
 
+/** Convert a module id to a filesystem-like path according to a style setting. */
 function moduleToPath(module: string, style: ResolverSpec["module_path_style"]): string {
   if (style === "dot") {
     return module.replaceAll(".", "/");
@@ -60,7 +62,8 @@ export function resolveModule(
 
   const tryLocal = (base: string, mod: string): string | null => {
     const modPath = moduleToPath(mod, res.module_path_style);
-    const basepath = normalize(join(base, modPath));
+    const baseAbs = isAbsolute(base) ? base : join(projectRoot, base);
+    const basepath = normalize(join(baseAbs, modPath));
     for (const ext of res.exts) {
       const p = basepath + ext;
       if (existsSync(p) && statSync(p).isFile()) {

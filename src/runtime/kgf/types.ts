@@ -74,6 +74,7 @@ export type KGFSpec = {
   rules: Record<string, RuleDef>;
   attrs: Record<string, AttrAction[]>;
   resolver: ResolverSpec;
+  semantics?: Record<string, SemOnBlock[]>;
 };
 
 // Lexer
@@ -81,4 +82,28 @@ export type Tok = {
   kind: string;
   text: string;
   pos: number;
+};
+
+// Semantics DSL (minimal AST)
+export type SemExpr =
+  | { kind: "str"; value: string }
+  | { kind: "num"; value: number }
+  | { kind: "bool"; value: boolean }
+  | { kind: "null" }
+  | { kind: "var"; name: string }
+  | { kind: "call"; name: string; args: SemExpr[] }
+  | { kind: "func"; name: string; args: SemExpr[] };
+
+export type SemStmt =
+  | { kind: "edge"; edgeKind: string; from: SemExpr; to: SemExpr; attrs?: SemExpr }
+  | { kind: "bind"; ns: SemExpr; name: SemExpr; to: SemExpr }
+  | { kind: "note"; noteType: string; payload?: SemExpr }
+  | { kind: "let"; id: string; value: SemExpr }
+  | { kind: "for"; id: string; iter: SemExpr; body: SemStmt[] };
+
+export type SemOnBlock = {
+  rule: string;
+  when?: SemExpr;
+  then: SemStmt[];
+  else?: SemStmt[];
 };

@@ -6,6 +6,7 @@ import type { AttrAction, KGFSpec, Tok } from "./types";
 import { addEdge } from "./graph";
 import type { CodeGraph } from "./graph";
 import { resolveModule } from "./resolver";
+import { evalSemantics, type SemEvalCtx } from "./semantics";
 
 // Minimal PEG and executor based on kgf_v5 runtime (function-style)
 
@@ -451,6 +452,21 @@ export function runParse(
     for (const a of acts) {
       applyAction(a, ctx, r[2]);
     }
+    // Semantics evaluation for this rule
+    const semBlocks = ctx.spec.semantics ? ctx.spec.semantics[name] : undefined;
+    const semCtx: SemEvalCtx = {
+      spec: ctx.spec,
+      graph: ctx.graph,
+      file: ctx.file,
+      root: ctx.root,
+      language: ctx.spec.language,
+      scopes: ctx.scopes,
+      symSeq: { n: ctx.symSeq },
+      callSeq: { n: ctx.callSeq },
+      callStack: ctx.callStack,
+      eventsTmp: ctx.eventsTmp,
+    };
+    evalSemantics(semBlocks, r[2], semCtx);
     const ruleEvents = ctx.eventsTmp.slice(before);
     return [true, r[1], r[2], ruleEvents];
   };
@@ -466,6 +482,20 @@ export function runParse(
   for (const a of startActs) {
     applyAction(a, ctx, r[2]);
   }
+  const semBlocks = ctx.spec.semantics ? ctx.spec.semantics[startRule] : undefined;
+  const semCtx: SemEvalCtx = {
+    spec: ctx.spec,
+    graph: ctx.graph,
+    file: ctx.file,
+    root: ctx.root,
+    language: ctx.spec.language,
+    scopes: ctx.scopes,
+    symSeq: { n: ctx.symSeq },
+    callSeq: { n: ctx.callSeq },
+    callStack: ctx.callStack,
+    eventsTmp: ctx.eventsTmp,
+  };
+  evalSemantics(semBlocks, r[2], semCtx);
   const events = ctx.eventsTmp.slice(before);
   return [r[2], events];
 }

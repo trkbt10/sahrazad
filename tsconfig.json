@@ -17,5 +17,8 @@
     "outDir": "dist",
     "types": ["node", "vitest/globals"]
   },
-  "include": ["src/**/*", "spec/**/*"]
+  "include": ["src/**/*", "spec/**/*"],
+  "exclude": [
+    "src/runtime/kgf/__fixtures__/**"
+  ]
 }

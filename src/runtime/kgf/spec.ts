@@ -2,6 +2,7 @@
  * @file KGF spec parser: extracts lex/grammar/attrs/resolver and normalizes resolver.
  */
 import type { AttrAction, KGFSpec, ResolverAlias, ResolverSpec, RuleDef, TokenDef } from "./types";
+import type { SemExpr, SemOnBlock, SemStmt } from "./types";
 
 /** Extract section body by heading marker `=== name`. */
 function section(text: string, name: string): string {
@@ -203,5 +204,154 @@ export function parseKGF(text: string): KGFSpec {
   const rules = parseRules(section(text, "grammar"));
   const attrs = parseAttrs(section(text, "attrs"));
   const resolver = parseResolver(section(text, "resolver"));
-  return { language, tokens: toks, rules, attrs, resolver };
+  const sem = parseSemantics(section(text, "semantics"));
+  return { language, tokens: toks, rules, attrs, resolver, semantics: sem };
+}
+
+/**
+ * Parse semantics section into rule -> on-blocks.
+ * Minimal parser using line scanning and balanced braces; expressions are parsed ad-hoc.
+ */
+export function parseSemantics(text: string): Record<string, SemOnBlock[]> | undefined {
+  const src = text ?? "";
+  const trimmed = src.trim();
+  if (trimmed.length === 0) {
+    return undefined;
+  }
+  const N = trimmed.length;
+  const skipWs = (j: number): number => (/\s/.test(trimmed[j] ?? "")) ? skipWs(j + 1) : j;
+  const readIdent = (j: number): [string, number] => {
+    const step = (k: number): number => (/^[A-Za-z0-9_]$/.test(trimmed[k] ?? "")) ? step(k + 1) : k;
+    const end = step(j);
+    return [trimmed.slice(j, end), end];
+  };
+  const readUntilBrace = (j: number): [string, number] => {
+    const k0 = skipWs(j);
+    if (trimmed[k0] !== '{') { return ["", j]; }
+    const walk = (p: number, depth: number): number => {
+      if (p >= N) { return -1; }
+      const ch = trimmed[p]!;
+      if (ch === '{') { return walk(p + 1, depth + 1); }
+      if (ch === '}') { return depth === 1 ? p : walk(p + 1, depth - 1); }
+      return walk(p + 1, depth);
+    };
+    const endPos = walk(k0, 0);
+    if (endPos < 0) { return ["", j]; }
+    return [trimmed.slice(k0 + 1, endPos), endPos + 1];
+  };
+
+  const parseExpr = (s: string): SemExpr => {
+    const S = s.trim();
+    if (S === "true" || S === "false") { return { kind: "bool", value: S === "true" }; }
+    if (S === "null") { return { kind: "null" }; }
+    if (/^\d+$/.test(S)) { return { kind: "num", value: Number.parseInt(S, 10) }; }
+    if (S.startsWith('"') && S.endsWith('"')) { return { kind: "str", value: S.slice(1, -1) }; }
+    if (S.startsWith("$") && /^[A-Za-z_][A-Za-z0-9_]*\(.*\)$/.test(S)) {
+      const name = S.slice(1, S.indexOf("("));
+      const inner = S.slice(S.indexOf("(") + 1, -1);
+      const args = splitArgs(inner).map(parseExpr);
+      return { kind: "call", name, args };
+    }
+    if (/^[A-Za-z_][A-Za-z0-9_]*\(.*\)$/.test(S)) {
+      const name = S.slice(0, S.indexOf("("));
+      const inner = S.slice(S.indexOf("(") + 1, -1);
+      const args = splitArgs(inner).map(parseExpr);
+      return { kind: "func", name, args };
+    }
+    if (S.startsWith("$")) { return { kind: "var", name: S.slice(1) }; }
+    if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(S)) { return { kind: "var", name: S }; }
+    return { kind: "str", value: S };
+  };
+
+  const splitArgs = (arglist: string): string[] => {
+    const rec = (p: number, depth: number, inStr: boolean, buf: string, acc: string[]): string[] => {
+      if (p >= arglist.length) {
+        const last = buf.trim();
+        return last.length > 0 ? [...acc, last] : acc;
+      }
+      const ch = arglist[p]!;
+      if (ch === '"') { return rec(p + 1, depth, !inStr, buf + ch, acc); }
+      if (!inStr && (ch === '(' || ch === '{')) { return rec(p + 1, depth + 1, inStr, buf + ch, acc); }
+      if (!inStr && (ch === ')' || ch === '}')) { return rec(p + 1, depth - 1, inStr, buf + ch, acc); }
+      if (!inStr && depth === 0 && ch === ',') { return rec(p + 1, depth, inStr, "", [...acc, buf.trim()]); }
+      return rec(p + 1, depth, inStr, buf + ch, acc);
+    };
+    return rec(0, 0, false, "", []);
+  };
+
+  const parseBlockStmts = (body: string): SemStmt[] => {
+    const lines = body.split(/\r?\n/).map((l) => l.trim()).filter((l) => l.length > 0 && !l.startsWith("#"));
+    const stmts: SemStmt[] = [];
+    for (const ln of lines) {
+      if (ln.startsWith("edge ")) {
+        // edge kind from <expr> to <expr> [attrs <expr>]
+        const m = ln.match(/^edge\s+([A-Za-z_][\w]*)\s+from\s+(.+?)\s+to\s+(.+?)(?:\s+attrs\s+(.+))?$/);
+        if (m) {
+          const kind = m[1]!; const from = parseExpr(m[2]!); const to = parseExpr(m[3]!);
+          const attrs = m[4] ? parseExpr(m[4]!) : undefined;
+          stmts.push({ kind: "edge", edgeKind: kind, from, to, attrs });
+          continue;
+        }
+      }
+      if (ln.startsWith("bind ")) {
+        const m = ln.match(/^bind\s+ns\s+(.+)\s+name\s+(.+)\s+to\s+(.+)$/);
+        if (m) {
+          stmts.push({ kind: "bind", ns: parseExpr(m[1]!), name: parseExpr(m[2]!), to: parseExpr(m[3]!) });
+          continue;
+        }
+      }
+      if (ln.startsWith("note ")) {
+        const m = ln.match(/^note\s+([A-Za-z_][\w]*)(?:\s+payload\s+(.+))?$/);
+        if (m) {
+          stmts.push({ kind: "note", noteType: m[1]!, payload: m[2] ? parseExpr(m[2]!) : undefined });
+          continue;
+        }
+      }
+      if (ln.startsWith("let ")) {
+        const m = ln.match(/^let\s+([A-Za-z_][\w]*)\s*=\s*(.+)$/);
+        if (m) {
+          stmts.push({ kind: "let", id: m[1]!, value: parseExpr(m[2]!) });
+          continue;
+        }
+      }
+      if (ln.startsWith("for ")) {
+        // Minimal single-line body not supported; recommend block flattening
+        // For simplicity in this version, ignore and parse as no-op
+        continue;
+      }
+    }
+    return stmts;
+  };
+
+  const parseOnBlocks = (idx: number, acc: SemOnBlock[]): [SemOnBlock[], number] => {
+    const at = skipWs(idx);
+    if (at >= N) { return [acc, at]; }
+    if (!trimmed.startsWith("on", at)) { return [acc, at]; }
+    const afterOn = skipWs(at + 2);
+    const [rule, j1] = readIdent(afterOn);
+    const afterRule = skipWs(j1);
+    const hasWhen = trimmed.startsWith("when", afterRule);
+    const afterWhen = hasWhen ? skipWs(afterRule + 4) : afterRule;
+    const bracePos = hasWhen ? trimmed.indexOf("{", afterWhen) : -1;
+    const condStr = hasWhen ? trimmed.slice(afterWhen, bracePos).trim() : "";
+    const condExpr: SemExpr | undefined = hasWhen ? (condStr.length > 0 ? parseExpr(condStr) : undefined) : undefined;
+    const posAfterCond = hasWhen ? bracePos : afterRule;
+    const [body, j2] = readUntilBrace(posAfterCond);
+    const afterBody = skipWs(j2);
+    const hasElse = trimmed.startsWith("else", afterBody);
+    const afterElse = hasElse ? skipWs(afterBody + 4) : afterBody;
+    const pair = hasElse ? readUntilBrace(afterElse) : ["", afterBody] as [string, number];
+    const elseBody = pair[0];
+    const nextPos = pair[1];
+    const elseParsed: SemStmt[] | undefined = hasElse ? parseBlockStmts(elseBody) : undefined;
+    const block: SemOnBlock = { rule, when: condExpr, then: parseBlockStmts(body), else: elseParsed };
+    return parseOnBlocks(nextPos, [...acc, block]);
+  };
+  const [blocks] = parseOnBlocks(0, []);
+  const map: Record<string, SemOnBlock[]> = {};
+  for (const b of blocks) {
+    const arr = map[b.rule] ?? [];
+    map[b.rule] = [...arr, b];
+  }
+  return map;
 }

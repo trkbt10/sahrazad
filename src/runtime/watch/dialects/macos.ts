@@ -20,13 +20,7 @@ const safeIsDir = (p: string): boolean => {
     return false;
   }
 };
-const safeParentIsDir = (p: string): boolean => {
-  try {
-    return statSync(dirname(p)).isDirectory();
-  } catch {
-    return false;
-  }
-};
+// Parent existence is not required for base selection; watch() will throw and be reported via onError.
 
 export const MacOSWatchStrategy: WatchStrategy = {
   start(paths, onSignal, onReady, onError) {
@@ -40,10 +34,10 @@ export const MacOSWatchStrategy: WatchStrategy = {
     };
     for (const p of paths) {
       try {
-        const isDir = safeIsDir(p) ? true : safeParentIsDir(p);
-        const base = isDir ? p : dirname(p);
-        const w = watch(base, { recursive: isDir }, (_eventType, filename) => {
-          const full = isDir && filename ? `${base}/${filename}` : p;
+        const pIsDir = safeIsDir(p);
+        const base = pIsDir ? p : dirname(p);
+        const w = watch(base, { recursive: pIsDir }, (_eventType, filename) => {
+          const full = pIsDir && filename ? `${base}/${filename}` : p;
           onSignal('touched', full);
         });
         w.on('error', onError);

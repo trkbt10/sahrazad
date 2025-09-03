@@ -13,12 +13,15 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
+    include: ["src/**/*.spec.ts", "src/**/*.test.ts"],
+    exclude: ["node_modules/**", "dist/**", "build/**"],
     setupFiles: [],
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov"],
       reportsDirectory: "coverage",
       include: ["src/**/*.{ts,tsx}"],
+      exclude: ["**/__fixtures__/**", "src/runtime/kgf/__fixtures__/**"],
     },
   },
 });

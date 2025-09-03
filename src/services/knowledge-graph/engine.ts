@@ -6,7 +6,7 @@ import { createKnowledgeGraphStore, knowledgeGraphFromJSON } from "./graph";
 import { createIdRegistry } from "./id-registry";
 import { rel } from "./util";
 import type { Meta } from "./types";
-import type { EmbedMany } from "../services/embedding";
+import type { EmbedMany } from "../embedding";
 import type { FileIO } from "vcdb/storage/types";
 
 /**
@@ -101,7 +101,13 @@ export function createKnowledgeGraphEngine(config: KnowledgeGraphEngineConfig): 
     }
   }
 
-  async function upsertEmbeddings({ client, items, embed, batch = 64, persist }: {
+  async function upsertEmbeddings({
+    client,
+    items,
+    embed,
+    batch = 64,
+    persist,
+  }: {
     client: { upsert: (...items: { id: number; vector: number[]; meta: Meta }[]) => void } & Record<string, unknown>;
     items: { key: string; text: string; meta: Meta }[];
     embed: EmbedMany;
@@ -109,7 +115,9 @@ export function createKnowledgeGraphEngine(config: KnowledgeGraphEngineConfig): 
     persist?: (client: unknown, opts: { baseName: string }) => Promise<void> | void;
   }) {
     async function process(i: number): Promise<void> {
-      if (i >= items.length) { return; }
+      if (i >= items.length) {
+        return;
+      }
       const chunk = items.slice(i, i + batch);
       const vecs = await embed(chunk.map((c) => c.text));
       const payload = chunk.map((c, j) => {

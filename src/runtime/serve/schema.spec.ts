@@ -47,10 +47,12 @@ describe("buildHttpHandlerFromSpec", () => {
     const j1 = (await r1.json()) as { ok?: boolean };
     expect(j1.ok).toBe(true);
 
-    // GET route declared in spec returns a default ok payload.
+    // GET route declared in spec executes the action and returns its payload.
     const r2 = await req("/v1/ping");
-    const j2 = (await r2.json()) as { ok?: boolean };
-    expect(j2.ok).toBe(true);
+    const j2 = (await r2.json()) as { items?: unknown[]; q?: unknown };
+    expect(Array.isArray(j2.items)).toBe(true);
+    // Ensure the action was called
+    expect(calls.map((c) => c.name)).toContain("recall");
 
     // POST route should call the action handler with JSON body.
     const payload = { paths: ["a", "b"] } as const;

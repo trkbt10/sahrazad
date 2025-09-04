@@ -41,6 +41,11 @@ const ajv = new Ajv({
   removeAdditional: false,
 });
 
+/**
+ * Wrap an action implementation with Ajv JSON Schema validation/coercion.
+ * - Applies defaults and type coercions according to schema.
+ * - Throws with a concise error message when validation fails.
+ */
 export function defineJsonAction<T>(schema: JSONSchemaType<T>, impl: (parsed: T) => Promise<Record<string, unknown>>): ActionHandler {
   const validate = ajv.compile<T>(schema);
   return async (args: Record<string, unknown>) => {

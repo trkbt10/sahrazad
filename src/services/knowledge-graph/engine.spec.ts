@@ -31,9 +31,21 @@ describe("KnowledgeGraph engine", () => {
     const engine = createKnowledgeGraphEngine({ repoDir: process.cwd(), io });
     await engine.load();
 
-    const collected: { id: number; vector: number[]; meta: Meta }[] = [];
-    const fakeClient: { upsert: (...items: { id: number; vector: number[]; meta: Meta }[]) => void } = {
-      upsert: (...items) => { collected.push(...items); },
+    const collected: { id: number; vector: Float32Array; meta: Meta }[] = [];
+    const fakeClient = {
+      state: {},
+      size: 0,
+      index: {},
+      async has() { return false; },
+      async get() { return null; },
+      async set() { return null; },
+      async delete() { return false; },
+      async push() { return 0; },
+      async upsert(...rows: { id: number; vector: Float32Array; meta: Meta }[]) { collected.push(...rows); return rows.length; },
+      async setMeta() { return true; },
+      async setVector() { return true; },
+      async find() { return null; },
+      async findMany() { return []; },
     };
     const embed = async (inputs: readonly string[]) => inputs.map((s) => Array.from({ length: 4 }, (_, i) => i + s.length));
 

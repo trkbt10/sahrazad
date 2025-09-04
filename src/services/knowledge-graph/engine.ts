@@ -5,6 +5,7 @@ import type { KnowledgeGraphStore } from "./graph";
 import { createKnowledgeGraphStore, knowledgeGraphFromJSON } from "./graph";
 import { createIdRegistry } from "./id-registry";
 import { rel } from "./util";
+import { toFileId } from "../../core/domain/identifiers";
 import type { Meta } from "./types";
 import type { EmbedMany } from "../embedding";
 import type { FileIO } from "vcdb/storage/types";
@@ -31,11 +32,11 @@ export type KnowledgeGraphEngineApi = {
   mergeGraph: (g: KnowledgeGraphStore) => void;
   deleteByPaths: (paths: string[]) => void;
   upsertEmbeddings: (args: {
-    client: { upsert: (...items: { id: number; vector: number[]; meta: Meta }[]) => void } & Record<string, unknown>;
+    client: { upsert: (...rows: { id: number; vector: Float32Array; meta: Meta }[]) => Promise<number> | number } & Record<string, unknown>;
     items: { key: string; text: string; meta: Meta }[];
     embed: EmbedMany;
     batch?: number;
-    persist?: (client: unknown, opts: { baseName: string }) => Promise<void> | void;
+    persist?: (client: { upsert: (...rows: { id: number; vector: Float32Array; meta: Meta }[]) => Promise<number> | number } & Record<string, unknown>, opts: { baseName: string }) => Promise<void> | void;
   }) => Promise<void>;
 };
 
@@ -89,13 +90,13 @@ export function createKnowledgeGraphEngine(config: KnowledgeGraphEngineConfig): 
   }
 
   function deleteByPaths(paths: string[]) {
-    const set = new Set(paths.map((p) => `file://${rel(config.repoDir, p)}`));
+    const set = new Set(paths.map((p) => toFileId(rel(config.repoDir, p))));
     for (const id of [...state.graph.nodes.keys()]) {
       const n = state.graph.nodes.get(id)!;
       if (n.type === "File" && set.has(n.id)) {
         state.graph.removeNode(n.id);
       }
-      if (n.type === "Symbol" && set.has(`file://${n.props.path}`)) {
+      if (n.type === "Symbol" && typeof n.props.path === "string" && set.has(toFileId(String(n.props.path)))) {
         state.graph.removeNode(n.id);
       }
     }
@@ -108,11 +109,11 @@ export function createKnowledgeGraphEngine(config: KnowledgeGraphEngineConfig): 
     batch = 64,
     persist,
   }: {
-    client: { upsert: (...items: { id: number; vector: number[]; meta: Meta }[]) => void } & Record<string, unknown>;
+    client: { upsert: (...rows: { id: number; vector: Float32Array; meta: Meta }[]) => Promise<number> | number } & Record<string, unknown>;
     items: { key: string; text: string; meta: Meta }[];
     embed: EmbedMany;
     batch?: number;
-    persist?: (client: unknown, opts: { baseName: string }) => Promise<void> | void;
+    persist?: (client: { upsert: (...rows: { id: number; vector: Float32Array; meta: Meta }[]) => Promise<number> | number } & Record<string, unknown>, opts: { baseName: string }) => Promise<void> | void;
   }) {
     async function process(i: number): Promise<void> {
       if (i >= items.length) {
@@ -128,7 +129,7 @@ export function createKnowledgeGraphEngine(config: KnowledgeGraphEngineConfig): 
         }
         return { id, vector: [...vec], meta: c.meta };
       });
-      client.upsert(...payload);
+      await client.upsert(...payload.map((p) => ({ id: p.id, vector: new Float32Array(p.vector), meta: p.meta })));
       await process(i + batch);
     }
     await process(0);

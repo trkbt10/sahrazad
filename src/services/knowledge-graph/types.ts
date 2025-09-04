@@ -16,6 +16,7 @@ export type Meta = {
   nodeId: string;
   kind: "file" | "symbol" | "commit";
   path?: string;
+  module?: string;
   symbol?: string;
   commit?: string;
   loc?: { start: number; end: number };
@@ -23,4 +24,3 @@ export type Meta = {
 };
 
 export type VecHit = { id: number; score?: number; distance?: number; meta?: Meta };
-

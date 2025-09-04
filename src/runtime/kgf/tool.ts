@@ -66,10 +66,12 @@ export function createTool(spec: KGFSpec, projectRoot: string): {
       eventsTmp: [],
     };
     const start = Object.keys(spec.rules)[0];
-    try {
-      runParse(peg, spec, start, toks, ctx);
-    } catch (e) {
-      addEdge(graph, "parseError", rel, rel, { message: e instanceof Error ? e.message : String(e) });
+    if (start && start.length > 0) {
+      try {
+        runParse(peg, spec, start, toks, ctx);
+      } catch (e) {
+        addEdge(graph, "parseError", rel, rel, { message: e instanceof Error ? e.message : String(e) });
+      }
     }
   };
 

@@ -15,6 +15,12 @@ Line       -> from:Ident ARROW to:Ident [ COLON kind:Ident ]
 === attrs
 on Line:    import module=to ; import module=from
 
+=== semantics
+on Line {
+  edge moduleDependsOn from $file to $resolve($to) attrs obj("via", $to, "dep_kind", "value")
+  edge moduleDependsOn from $file to $resolve($from) attrs obj("via", $from, "dep_kind", "value")
+}
+
 === resolver
 sources:
 relative_prefixes: ./, ../, /, http://, https://, url:, npm:, pip:

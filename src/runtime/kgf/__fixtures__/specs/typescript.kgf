@@ -96,6 +96,23 @@ on ImportNamed:        import module=from
 on ImportDefault:      import module=from
 on ExportFrom:         reexport module=from
 
+=== semantics
+on SideEffect {
+  edge moduleDependsOn from $file to $resolve($path) attrs obj("via", $path, "dep_kind", "value")
+}
+on ImportNS {
+  edge moduleDependsOn from $file to $resolve($from) attrs obj("via", $from, "dep_kind", "value")
+}
+on ImportNamedDefault {
+  edge moduleDependsOn from $file to $resolve($from) attrs obj("via", $from, "dep_kind", "value")
+}
+on ImportNamed {
+  edge moduleDependsOn from $file to $resolve($from) attrs obj("via", $from, "dep_kind", "value")
+}
+on ImportDefault {
+  edge moduleDependsOn from $file to $resolve($from) attrs obj("via", $from, "dep_kind", "value")
+}
+
 === resolver
 sources: .ts, .tsx, .d.ts
 relative_prefixes: ./, ../, /

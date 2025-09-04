@@ -11,4 +11,4 @@ Contents
 - 05_resolver.md — Module resolution spec and behavior
 - 06_semantics.md — Semantics DSL (edge/bind/note/let/for) and evaluation
 - 07_runtime.md — Runtime components and JSON output shape
-
+ - 99_appendix_llm_prompt.md — Sample LLM prompt to draft a KGF spec from a codebase

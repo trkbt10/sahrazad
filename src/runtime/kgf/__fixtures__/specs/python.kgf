@@ -52,6 +52,9 @@ on FromImport:  import module=module
 
 on Suite:       scope pop
 
+=== semantics
+# No-op semantics; attrs cover imports/defs/refs.
+
 === resolver
 sources: .py
 relative_prefixes: ./, ../, /

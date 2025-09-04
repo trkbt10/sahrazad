@@ -26,6 +26,20 @@ on ImgTag:    import module=_last
 on ScriptTag: import module=_last
 on LinkTag:   import module=_last
 
+=== semantics
+on ATag {
+  edge moduleDependsOn from $file to $resolve($_last) attrs obj("via", $_last, "dep_kind", "value")
+}
+on ImgTag {
+  edge moduleDependsOn from $file to $resolve($_last) attrs obj("via", $_last, "dep_kind", "value")
+}
+on ScriptTag {
+  edge moduleDependsOn from $file to $resolve($_last) attrs obj("via", $_last, "dep_kind", "value")
+}
+on LinkTag {
+  edge moduleDependsOn from $file to $resolve($_last) attrs obj("via", $_last, "dep_kind", "value")
+}
+
 === resolver
 sources: .html, .htm
 relative_prefixes: ./, ../, /, http://, https://, mailto:, ftp://, data:

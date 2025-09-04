@@ -5,13 +5,7 @@ import type { KGFSpec } from "../runtime/kgf";
 import type { KnowledgeGraphEngineApi } from "../services/knowledge-graph/engine";
 import type { EmbedMany } from "../services/embedding";
 import type { Meta } from "../services/knowledge-graph/types";
-
-
-/** Minimal vector client aligned with vcdb API surface we use. */
-export type VectorClient = {
-  upsert: (...rows: { id: number; vector: Float32Array; meta: Meta }[]) => Promise<number> | number;
-  findMany: (q: Float32Array, opts: { k?: number }) => Promise<Array<{ id: number; score: number; meta: unknown }>>;
-};
+import type { VectorDB } from "vcdb";
 
 export type CoreIngestConfig = {
   repoDir: string;
@@ -19,7 +13,7 @@ export type CoreIngestConfig = {
   kgfSpec: KGFSpec | KGFSpec[];
   engine: KnowledgeGraphEngineApi;
   embed: EmbedMany;
-  vector: { client: { upsert: (...rows: { id: number; vector: Float32Array; meta: Meta }[]) => Promise<number> | number; findMany: (q: Float32Array, opts: { k?: number }) => Promise<Array<{ id: number; score: number; meta: unknown }>> }; persist?: (client: { upsert: (...rows: { id: number; vector: Float32Array; meta: Meta }[]) => Promise<number> | number } & Record<string, unknown>, opts: { baseName: string }) => Promise<void> | void };
+  vector: { db: VectorDB<Meta> };
   /** Optional recall-time exclude patterns (repo-relative). */
   excludes?: string[];
   /**

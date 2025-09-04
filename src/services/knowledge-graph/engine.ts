@@ -9,6 +9,7 @@ import { toFileId } from "../../core/domain/identifiers";
 import type { Meta } from "./types";
 import type { EmbedMany } from "../embedding";
 import type { FileIO } from "vcdb/storage/types";
+import type { VectorDB } from "vcdb";
 
 /**
  * Configuration for the knowledge-graph engine.
@@ -32,11 +33,10 @@ export type KnowledgeGraphEngineApi = {
   mergeGraph: (g: KnowledgeGraphStore) => void;
   deleteByPaths: (paths: string[]) => void;
   upsertEmbeddings: (args: {
-    client: { upsert: (...rows: { id: number; vector: Float32Array; meta: Meta }[]) => Promise<number> | number } & Record<string, unknown>;
+    client: VectorDB<Meta>;
     items: { key: string; text: string; meta: Meta }[];
     embed: EmbedMany;
     batch?: number;
-    persist?: (client: { upsert: (...rows: { id: number; vector: Float32Array; meta: Meta }[]) => Promise<number> | number } & Record<string, unknown>, opts: { baseName: string }) => Promise<void> | void;
   }) => Promise<void>;
 };
 
@@ -107,13 +107,11 @@ export function createKnowledgeGraphEngine(config: KnowledgeGraphEngineConfig): 
     items,
     embed,
     batch = 64,
-    persist,
   }: {
-    client: { upsert: (...rows: { id: number; vector: Float32Array; meta: Meta }[]) => Promise<number> | number } & Record<string, unknown>;
+    client: VectorDB<Meta>;
     items: { key: string; text: string; meta: Meta }[];
     embed: EmbedMany;
     batch?: number;
-    persist?: (client: { upsert: (...rows: { id: number; vector: Float32Array; meta: Meta }[]) => Promise<number> | number } & Record<string, unknown>, opts: { baseName: string }) => Promise<void> | void;
   }) {
     async function process(i: number): Promise<void> {
       if (i >= items.length) {
@@ -133,9 +131,8 @@ export function createKnowledgeGraphEngine(config: KnowledgeGraphEngineConfig): 
       await process(i + batch);
     }
     await process(0);
-    if (persist) {
-      await persist(client, { baseName });
-    }
+    // Default persistence: save snapshot using vcdb's index
+    await client.index.saveState(client.state, { baseName });
   }
 
   return { load, save, getGraph, mergeGraph, deleteByPaths, upsertEmbeddings };

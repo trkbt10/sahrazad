@@ -1,10 +1,10 @@
 /**
  * @file Core watch helpers: FS or Git-triggered ingestion.
  */
-import type { StartFsWatchArgs } from "./types";
-import { FsWatchStrategy } from "../runtime/watch";
-import type { GitRepo, GitWatchHandlers, GitWatchOptions } from "../runtime/git";
-import { watchGit } from "../runtime/git";
+import type { StartFsWatchArgs } from "../types";
+import { FsWatchStrategy } from "../../runtime/watch/index";
+import type { GitRepo, GitWatchHandlers, GitWatchOptions } from "../../runtime/git/index";
+import { watchGit } from "../../runtime/git/index";
 
 /** Start a debounce-aggregated FS watch and emit changed paths to onChange. */
 export function startFsWatch({ paths, debounceMs = 150, onChange }: StartFsWatchArgs) {

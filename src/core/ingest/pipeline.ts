@@ -1,12 +1,12 @@
 /**
  * @file Core ingestion pipeline: detect changes, run KGF, merge into KnowledgeGraph, upsert embeddings.
  */
-import type { CoreIngestConfig } from "./types";
-import { validateIngestConfig } from "./validate";
+import type { CoreIngestConfig } from "../types";
+import { validateIngestConfig } from "../domain/config";
 import { indexPathsWithKGF } from "./kgf-ingest";
-import type { KGFSpec } from "../runtime/kgf";
+import type { KGFSpec } from "../../runtime/kgf/index";
 import path from "node:path";
-import { defaultTextForMeta } from "./utils";
+import { defaultTextForMeta } from "../utils/index";
 
 /**
  * Create an ingest function bound to config. Caller supplies explicit dependencies.
@@ -77,10 +77,9 @@ export function createIngestPipeline(config: CoreIngestConfig): {
         });
 
         await config.engine.upsertEmbeddings({
-          client: config.vector.client,
+          client: config.vector.db,
           items,
           embed: config.embed,
-          persist: config.vector.persist,
         });
       }
     }

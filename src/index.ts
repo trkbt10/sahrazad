@@ -8,10 +8,10 @@
 
 // Core (domain logic)
 import type { CoreIngestConfig } from "./core/types";
-import { createIngestPipeline } from "./core/pipeline";
-import { createRecallQueryApi } from "./core/query";
-import { createTaskAssist } from "./core/task-assist";
-import { validateVectorClient } from "./core/validate";
+import { createIngestPipeline } from "./core/ingest/pipeline";
+import { createRecallQueryApi } from "./core/query/index";
+import { createTaskAssist } from "./core/task";
+import { validateVectorDb } from "./core/domain/config";
 
 // Serve runtime (schema-driven)
 import type { ActionRegistry } from "./runtime/serve";
@@ -22,6 +22,7 @@ import { buildHttpHandlerFromSpec } from "./runtime/serve";
 import type { HttpApp } from "./runtime/serve";
 import type { McpOfficialAdapter } from "./runtime/serve";
 import { registerMcpToolsOn } from "./runtime/serve";
+import { listImmediateChildren } from "./core/domain/paths";
 
 export type { Embedding, EmbedMany } from "./services/embedding";
 export type { ServerSpec } from "./runtime/serve";
@@ -40,10 +41,10 @@ export type AppCoreDeps = CoreIngestConfig;
  * - task.outline: outline with symbols/relations/next-files/suggested queries
  */
 export function createActionsFromCore(deps: AppCoreDeps): ActionRegistry {
-  validateVectorClient(deps?.vector?.client);
+  validateVectorDb(deps?.vector?.db);
   const pipeline = createIngestPipeline(deps);
-  const recall = createRecallQueryApi({ engine: deps.engine, embed: deps.embed, client: deps.vector.client, ignore: deps.excludes });
-  const task = createTaskAssist({ engine: deps.engine, embed: deps.embed, client: { findMany: deps.vector.client.findMany } });
+  const recall = createRecallQueryApi({ engine: deps.engine, embed: deps.embed, client: deps.vector.db, ignore: deps.excludes });
+  const task = createTaskAssist({ engine: deps.engine, embed: deps.embed, db: deps.vector.db });
 
   type IngestArgs = { paths?: string[]; save?: boolean; embed?: boolean };
   const IngestSchema: JSONSchemaType<IngestArgs> = {
@@ -114,23 +115,8 @@ export function createActionsFromCore(deps: AppCoreDeps): ActionRegistry {
     // Lightweight path-based browsing (no explicit Dir nodes): returns immediate children under base
     browse: defineJsonAction<{ base?: string }>({ type: "object", properties: { base: { type: "string", nullable: true, default: "" } }, required: [], additionalProperties: true } as JSONSchemaType<{ base?: string }>, async (p) => {
       const base = typeof p.base === "string" ? p.base : "";
-      const g = deps.engine.getGraph();
-      const dirs = new Set<string>();
-      const files: string[] = [];
-      for (const n of g.nodes.values()) {
-        if (n.type !== "File") { continue; }
-        const path = typeof n.props.path === "string" ? (n.props.path as string) : "";
-        if (!path) { continue; }
-        if (base) {
-          if (!path.startsWith(base)) { continue; }
-        }
-        const rest = base ? path.slice(base.length) : path;
-        const parts = rest.split("/");
-        const seg = parts[0] ? parts[0] : rest;
-        const hasMore = parts.length > 1;
-        if (hasMore) { dirs.add(seg); } else { files.push(rest); }
-      }
-      return { base, dirs: Array.from(dirs).sort(), files: files.sort() } as Record<string, unknown>;
+      const { dirs, files } = listImmediateChildren(deps.engine.getGraph(), base);
+      return { base, dirs, files } as Record<string, unknown>;
     }),
   };
 

@@ -1,11 +1,16 @@
 /**
  * @file Core reusable helpers to slim modules and ease testing.
  */
-import type { KnowledgeGraphEngineApi } from "../services/knowledge-graph/engine";
-import { isFileId, filePathFromId } from "./domain/identifiers";
+import type { KnowledgeGraphEngineApi } from "../../services/knowledge-graph/engine";
+import { isFileId, filePathFromId } from "../domain/identifiers";
 
 /** Build default text for an entity to embed. */
-export function defaultTextForMeta(m: { kind: "file" | "symbol" | "commit"; nodeId: string; path?: string; symbol?: string }): string {
+export function defaultTextForMeta(m: {
+  kind: "file" | "symbol" | "commit";
+  nodeId: string;
+  path?: string;
+  symbol?: string;
+}): string {
   if (m.kind === "file") {
     const p = m.path ?? m.nodeId;
     return `file ${p}`;
@@ -18,7 +23,6 @@ export function defaultTextForMeta(m: { kind: "file" | "symbol" | "commit"; node
   return m.nodeId;
 }
 
-/** Resolve a graph node id to a file path when possible. */
 /** Resolve a graph node id to a file path when possible. */
 export function nodeIdToFilePath(getGraph: KnowledgeGraphEngineApi["getGraph"], nodeId: string): string | undefined {
   const graph = getGraph();

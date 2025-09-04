@@ -1,7 +1,7 @@
 /**
  * @file Tests for KGF -> KnowledgeGraph conversion.
  */
-import { createGraph, getOrAddModule, getOrAddSymbol, addEdge } from "../runtime/kgf/graph";
+import { createGraph, getOrAddModule, getOrAddSymbol, addEdge } from "../../runtime/kgf/graph";
 import { toKnowledgeGraph } from "./kgf-ingest";
 
 describe("toKnowledgeGraph", () => {

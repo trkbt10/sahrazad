@@ -1,15 +1,16 @@
 /**
  * @file Task assistance for MCP-like flows: suggest related files and build outlines.
  */
-import type { KnowledgeGraphEngineApi } from "../services/knowledge-graph/engine";
-import type { EmbedMany } from "../services/embedding";
-import { nodeIdToFilePath } from "./utils";
-import { toFileId } from "./domain/identifiers";
+import type { KnowledgeGraphEngineApi } from "../../services/knowledge-graph/engine";
+import type { EmbedMany } from "../../services/embedding/index";
+import { nodeIdToFilePath } from "../utils/index";
+import { toFileId } from "../domain/identifiers";
+import type { VectorDB } from "vcdb";
 
 export type TaskAssistConfig = {
   engine: KnowledgeGraphEngineApi;
   embed: EmbedMany;
-  client: { findMany: (q: Float32Array, opts: { k?: number }) => Promise<Array<{ id: number; score: number; meta: unknown }>> };
+  db: VectorDB<unknown>;
 };
 
 export type SuggestedFile = {
@@ -42,7 +43,7 @@ export function createTaskAssist(cfg: TaskAssistConfig) {
       throw new Error("suggestRelatedFiles: empty embedding for task");
     }
     // Pull more hits than requested files to allow aggregation
-    const hits = await cfg.client.findMany(new Float32Array(q as number[]), { k: Math.max(args.topKFiles * 5, 20) });
+    const hits = await cfg.db.findMany(new Float32Array(q as number[]), { k: Math.max(args.topKFiles * 5, 20) });
     const acc = new Map<string, { score: number; reasons: string[] }>();
     const g = cfg.engine.getGraph();
 
